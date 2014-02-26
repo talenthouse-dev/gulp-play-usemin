@@ -7,12 +7,15 @@ var gutil = require('gulp-util');
 
 module.exports = function(options) {
 	options = options || {};
+  options.assetRoute = options.assetRoute || "@routes.Assets.at";
+  options.javascriptDir = options.javascriptDir || "javascripts";
+  options.stylesheetDir = options.stylesheetDir || "stylesheets";
 
 	var startReg = /<!--\s*build:(\w+)(?:\(([^\)]+?)\))?\s+(\/?([^\s]+?))\s*-->/gim;
 	var endReg = /<!--\s*endbuild\s*-->/gim;
-	var jsReg = /<\s*script\s+.*?src\s*=\s*"([^"]+?)".*?><\s*\/\s*script\s*>/gi;
-	var cssReg = /<\s*link\s+.*?href\s*=\s*"([^"]+)".*?>/gi;
-	var basePath, mainPath, mainName, alternatePath;
+  var jsReg = new RegExp("<\\s*script\\s+.*?src\\s*=\\s*\"" + options.assetRoute + "\\(\"([^\"]+?)\"\\)\".*?><\\s*\\/\\s*script\\s*>", "gi");
+  var cssReg = new RegExp("<\\s*link\\s+.*?href\\s*=\\s*\"" + options.assetRoute + "\\(\"([^\"]+)\"\\)\".*?>","gi");
+	var basePath, mainPath, mainName, relativePath;
 
 	function createFile(name, content) {
 		return new gutil.File({
@@ -32,10 +35,11 @@ module.exports = function(options) {
 		content
 			.replace(/<!--(?:(?:.|\r|\n)*?)-->/gim, '')
 			.replace(reg, function (a, b) {
-				var filePath = path.resolve(path.join(alternatePath || mainPath, b));
+        var filePath = path.resolve(path.join(relativePath || mainPath, b));
 
-				if (options.assetsDir)
-					filePath = path.resolve(path.join(options.assetsDir, path.relative(basePath, filePath)));
+        if (!fs.existsSync(filePath) && options.assetsDir) {
+          filePath = path.resolve(path.join(options.assetsDir, b));
+        }
 
 				paths.push(filePath);
 			});
@@ -100,21 +104,24 @@ module.exports = function(options) {
 		for (var i = 0, l = sections.length; i < l; ++i)
 			if (sections[i].match(startReg)) {
 				var section = sections[i].split(startReg);
-				alternatePath = section[2];
+        if (section[2]) {
+          relativePath = path.join(mainPath, section[2]);
+        }
 
 				html.push(section[0]);
 
-				if (getBlockType(section[5]) == 'js')
-					process(section[4], getFiles(section[5], jsReg), section[1], function(name, file) {
-						push(file);
-						if (path.extname(file.path) == '.js')
-							html.push('<script src="' + name.replace(path.basename(name), path.basename(file.path)) + '"></script>');
-					}.bind(this, section[3]));
-				else
-					process(section[4], getFiles(section[5], cssReg), section[1], function(name, file) {
-						push(file);
-						html.push('<link rel="stylesheet" href="' + name.replace(path.basename(name), path.basename(file.path)) + '"/>');
-					}.bind(this, section[3]));
+        if (getBlockType(section[5]) == 'js')
+          process(section[4], getFiles(section[5], jsReg), section[1], function (name, file) {
+            push(file);
+            var fileLocation = options.assetRoute + '("' + path.join(options.javascriptDir, path.basename(name)) + '")';
+            html.push('<script type="application/javascript" src="' + fileLocation + '"></script>');
+          }.bind(this, section[3]));
+        else
+          process(section[4], getFiles(section[5], cssReg), section[1], function (name, file) {
+            push(file);
+            var fileLocation = options.assetRoute + '("' + path.join(options.stylesheetDir, path.basename(name)) + '")';
+            html.push('<link rel="stylesheet" href="' + fileLocation + '"/>');
+          }.bind(this, section[3]));
 			}
 			else
 				html.push(sections[i]);
