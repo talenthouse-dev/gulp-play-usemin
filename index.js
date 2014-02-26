@@ -114,7 +114,7 @@ module.exports = function(options) {
           process(section[4], getFiles(section[5], jsReg), section[1], function (name, file) {
             push(file);
             var fileLocation = options.assetRoute + '("' + path.join(options.javascriptDir, path.basename(name)) + '")';
-            html.push('<script type="application/javascript" src="' + fileLocation + '"></script>');
+            html.push('<script type="text/javascript" src="' + fileLocation + '"></script>');
           }.bind(this, section[3]));
         else
           process(section[4], getFiles(section[5], cssReg), section[1], function (name, file) {
