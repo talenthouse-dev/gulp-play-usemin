@@ -122,7 +122,7 @@ module.exports = function(options) {
         else
           process(section[4], getFiles(section[5], cssReg), section[1], function (name, file) {
             push(file);
-            var fileLocation = options.assetRoute + '("' + path.join(options.stylesheetDir, path.basename(file.path))) + '")';
+            var fileLocation = options.assetRoute + '("' + path.join(options.stylesheetDir, path.basename(file.path)) + '")';
             html.push('<link rel="stylesheet" href="' + fileLocation + '"/>');
           }.bind(this, section[3]));
 			}
