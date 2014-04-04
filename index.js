@@ -116,13 +116,13 @@ module.exports = function(options) {
         if (getBlockType(section[5]) == 'js')
           process(section[4], getFiles(section[5], jsReg), section[1], function (name, file) {
             push(file);
-            var fileLocation = options.assetRoute + '("' + path.join(options.javascriptDir, path.basename(name)) + '")';
+            var fileLocation = options.assetRoute + '("' + path.join(options.javascriptDir, path.basename(file.path)) + '")';
             html.push('<script type="text/javascript" src="' + fileLocation + '"></script>');
           }.bind(this, section[3]));
         else
           process(section[4], getFiles(section[5], cssReg), section[1], function (name, file) {
             push(file);
-            var fileLocation = options.assetRoute + '("' + path.join(options.stylesheetDir, path.basename(name)) + '")';
+            var fileLocation = options.assetRoute + '("' + path.join(options.stylesheetDir, path.basename(file.path))) + '")';
             html.push('<link rel="stylesheet" href="' + fileLocation + '"/>');
           }.bind(this, section[3]));
 			}
