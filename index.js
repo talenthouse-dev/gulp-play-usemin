@@ -46,7 +46,6 @@ module.exports = function (options) {
             });
 
         for (var i = 0, l = paths.length; i < l; ++i) {
-            console.log('File Path: ' + paths[i]);
             var filepath = glob.sync(paths[i])[0];
             files.push(new gutil.File({
                 path: filepath,
