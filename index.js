@@ -6,16 +6,17 @@ var through = require('through2');
 var gutil = require('gulp-util');
 var glob = require('glob');
 
-module.exports = function (options) {
+module.exports = function(options) {
     options = options || {};
-    options.assetRoute = options.assetRoute || "@routes.Assets.at";
+    options.outputAssetRoute = options.outputAssetRoute || "@routes.OutputAssets.at";
+    options.assetRouteRegex = options.assetRouteRegex || "@routes.Assets.at";
     options.javascriptDir = options.javascriptDir || "javascripts";
     options.stylesheetDir = options.stylesheetDir || "stylesheets";
 
     var startReg = /<!--\s*build:(\w+)(?:\(([^\)]+?)\))?\s+(\/?([^\s]+?))\s*-->/gim;
     var endReg = /<!--\s*endbuild\s*-->/gim;
-    var jsReg = new RegExp("<\\s*script\\s+.*?src\\s*=\\s*\"" + options.assetRoute + "\\(\"([^\"]+?)\"\\)\".*?><\\s*\\/\\s*script\\s*>", "gi");
-    var cssReg = new RegExp("<\\s*link\\s+.*?href\\s*=\\s*\"" + options.assetRoute + "\\(\"([^\"]+)\"\\)\".*?>", "gi");
+    var jsReg = new RegExp("<\\s*script\\s+.*?src\\s*=\\s*\"" + options.assetRouteRegex + "\\(\"([^\"]+?)\"\\)\".*?><\\s*\\/\\s*script\\s*>", "gi");
+    var cssReg = new RegExp("<\\s*link\\s+.*?href\\s*=\\s*\"" + options.assetRouteRegex + "\\(\"([^\"]+)\"\\)\".*?>","gi");
     var basePath, mainPath, mainName, relativePath;
 
     function createFile(name, content) {
@@ -36,11 +37,11 @@ module.exports = function (options) {
         content
             .replace(/<!--(?:(?:.|\r|\n)*?)-->/gim, '')
             .replace(reg, function (a, b) {
-                var filePath = path.resolve(path.join(relativePath || mainPath, b));
+        var filePath = path.resolve(path.join(relativePath || mainPath, b));
 
-                if (!fs.existsSync(filePath) && options.assetsDir) {
-                    filePath = path.resolve(path.join(options.assetsDir, b));
-                }
+        if (!fs.existsSync(filePath) && options.assetsDir) {
+          filePath = path.resolve(path.join(options.assetsDir, b));
+        }
 
                 paths.push(filePath);
             });
@@ -59,7 +60,7 @@ module.exports = function (options) {
     function concat(files, name) {
         var buffer = [];
 
-        files.forEach(function (file) {
+        files.forEach(function(file) {
             buffer.push(String(file.contents));
         });
 
@@ -80,7 +81,7 @@ module.exports = function (options) {
             }
 
             stream.on('data', write);
-            files.forEach(function (file) {
+            files.forEach(function(file) {
                 stream.write(file);
             });
             stream.removeListener('data', write);
@@ -107,35 +108,35 @@ module.exports = function (options) {
         for (var i = 0, l = sections.length; i < l; ++i)
             if (sections[i].match(startReg)) {
                 var section = sections[i].split(startReg);
-                if (section[2]) {
-                    relativePath = path.join(mainPath, section[2]);
-                }
+        if (section[2]) {
+          relativePath = path.join(mainPath, section[2]);
+        }
 
                 html.push(section[0]);
 
-                if (getBlockType(section[5]) == 'js')
-                    process(section[4], getFiles(section[5], jsReg), section[1], function (name, file) {
-                        push(file);
-                        var fileLocation = options.assetRoute + '("' + path.join(options.javascriptDir, path.basename(file.path)) + '")';
-                        html.push('<script type="text/javascript" src="' + fileLocation + '"></script>');
-                    }.bind(this, section[3]));
-                else
-                    process(section[4], getFiles(section[5], cssReg), section[1], function (name, file) {
-                        push(file);
-                        var fileLocation = options.assetRoute + '("' + path.join(options.stylesheetDir, path.basename(file.path)) + '")';
-                        html.push('<link rel="stylesheet" href="' + fileLocation + '"/>');
-                    }.bind(this, section[3]));
+        if (getBlockType(section[5]) == 'js')
+          process(section[4], getFiles(section[5], jsReg), section[1], function (name, file) {
+            push(file);
+            var fileLocation = options.outputAssetRoute + '("' + path.join(options.javascriptDir, path.basename(file.path)) + '")';
+            html.push('<script type="text/javascript" src="' + fileLocation + '"></script>');
+          }.bind(this, section[3]));
+        else
+          process(section[4], getFiles(section[5], cssReg), section[1], function (name, file) {
+            push(file);
+            var fileLocation = options.outputAssetRoute + '("' + path.join(options.stylesheetDir, path.basename(file.path)) + '")';
+            html.push('<link rel="stylesheet" href="' + fileLocation + '"/>');
+          }.bind(this, section[3]));
             }
             else
                 html.push(sections[i]);
 
-        process(mainName, [createFile(mainName, html.join(''))], 'html', function (file) {
+        process(mainName, [createFile(mainName, html.join(''))], 'html', function(file) {
             push(file);
             callback();
         });
     }
 
-    return through.obj(function (file, enc, callback) {
+    return through.obj(function(file, enc, callback) {
         if (file.isNull()) {
             this.push(file); // Do nothing if no contents
             callback();
